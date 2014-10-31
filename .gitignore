@@ -1,3 +1,9 @@
+.DS_*
+*.sam
+*_Human_Virus_no_header.txt
+*_Human_Only_no_header.txt
+*_grep_stats.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
