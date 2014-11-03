@@ -40,7 +40,7 @@ def main():
 	# output files
 	virus_no_header = "{}_Human_Virus_no_header.txt".format(sam)
 	human_no_header = "{}_Human_Only_no_header.txt".format(sam)
-	stats_file = "{}_grep_stats.txt".format(sam)
+	stats_file = "{}_max_grep_stats.txt".format(sam)
 
 	# Regular Expressions
 	virus_re = re.compile("chrvirus")
@@ -78,9 +78,9 @@ def main():
 				hit = split_line[2]
 				human_dict[seq_id+hit] = line
 				human_count += 1
+
 	with open(stats_file, 'w') as stats:
 		# Write virus
-		# Stats
 		stats.write("\nTotal Virus found:\t{}\n".format(virus_count))
 		stats.write("Unique Virus found:\t{}\n".format(len(virus_dict.keys())))
 		with open(virus_no_header, 'w') as virus_out:
@@ -94,17 +94,6 @@ def main():
 			for key in human_dict.keys():
 				human_out.write(human_dict[key])
 				stats.write(human_dict[key].split('\t')[2]+'\n')
-'''
-	# Stats
-	print "\nTotal Virus found:\t{}".format(virus_count)
-	print "Unique Virus found:\t{}".format(len(virus_dict.keys()))
-	for key in virus_dict.keys():
-		print virus_dict[key].split('\t')[2]
-	print "\nTotal Human found:\t{}".format(human_count)
-	print "Unique Human found:\t{}".format( len(human_dict.keys()))
-	for key in human_dict.keys():
-		print human_dict[key].split('\t')[2]
-'''
-	# Open the sam file
+
 if __name__ == '__main__':
 	main()
