@@ -15,7 +15,7 @@ Max Grep
 '''
 # Check for some defined homopolymers. Sequence is split_line[9]
 def no_homopolymer(sequence):
-	split_line = line.split('\t')
+	split_line = sequence.split('\t')
 	if not 'TTTTTTTTTTTTTTTTTTTT' in split_line[9]:
 		if not 'AAAAAAAAAAAAAAAAAAAA' in split_line[9]:
 			if not 'TTTTTTTTTTTTTTTTCTTT' in split_line[9]:
@@ -32,10 +32,12 @@ def main():
 
 	# Input file
 	parser.add_argument('-i','--input',dest='input', help='The input stats', required=True)
+	parser.add_argument('-t','--test', action='store_true', help='Test mode, no files written.')
 
 	# Parse arguments
 	args = parser.parse_args()
 	sam = os.path.abspath(args.input)
+	test = args.test
 
 	# output files
 	virus_no_header = "{}_Human_Virus_no_header.txt".format(sam)
@@ -55,45 +57,60 @@ def main():
 	# Counts
 	virus_count = 0
 	human_count = 0 
+	homopolymer_count = 0
 
 	with open(sam, 'r') as sam_handle: #, open(human_no_header, 'w')
 		for line in sam_handle:
 			# If the line is a header (@SQ/@PG)
 			if line.startswith('@SQ') or line.startswith('@PG'):
 				#print "Nope"
-				pass
+				continue
 			# Virus
-			elif virus_re.search(line) is not None:
+			if virus_re.search(line) is not None:
 				#print "Virus"
 				split_line = line.split('\t')
 				seq_id = split_line[0]
 				hit = split_line[2]
-				virus_dict[seq_id+hit] = line
-				virus_count += 1
+				if no_homopolymer(line):
+					virus_dict[seq_id+hit] = line
+					virus_count += 1
+				else:
+					homopolymer_count += 1
 			# Human
 			elif human_re.search(line) is not None:
 				#print "Human"
 				split_line = line.split('\t')
 				seq_id = split_line[0]
 				hit = split_line[2]
-				human_dict[seq_id+hit] = line
-				human_count += 1
-
-	with open(stats_file, 'w') as stats:
-		# Write virus
-		stats.write("\nTotal Virus found:\t{}\n".format(virus_count))
-		stats.write("Unique Virus found:\t{}\n".format(len(virus_dict.keys())))
-		with open(virus_no_header, 'w') as virus_out:
-			for key in virus_dict.keys():
-				virus_out.write(virus_dict[key])
-				stats.write(virus_dict[key].split('\t')[2]+'\n')
-		# Write human
-		stats.write("\nTotal Human found:\t{}\n".format(human_count))
-		stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
-		with open(human_no_header, 'w') as human_out:
-			for key in human_dict.keys():
-				human_out.write(human_dict[key])
-				stats.write(human_dict[key].split('\t')[2]+'\n')
+				if no_homopolymer(line):
+					human_dict[seq_id+hit] = line
+					human_count += 1
+				else:
+					homopolymer_count += 1
+ 	if test:
+ 		print "Homopolymers found:\t{}".format(homopolymer_count)
+ 		print "Total Virus found:\t{}".format(virus_count)
+		print "Unique Virus found:\t{}".format(len(virus_dict.keys()))
+		print "Total Human found:\t{}".format(human_count)
+		print "Unique Human found:\t{}".format(len(human_dict.keys()))
+ 	else:
+		with open(stats_file, 'w') as stats:
+			# Homopolymer stats
+			stats.write("\nHomopolymers found:\t{}".format(homopolymer_count))
+			# Write virus
+			stats.write("\nTotal Virus found:\t{}\n".format(virus_count))
+			stats.write("Unique Virus found:\t{}\n".format(len(virus_dict.keys())))
+			with open(virus_no_header, 'w') as virus_out:
+				for key in virus_dict.keys():
+					virus_out.write(virus_dict[key])
+					stats.write(virus_dict[key].split('\t')[2]+'\n')
+			# Write human
+			stats.write("\nTotal Human found:\t{}\n".format(human_count))
+			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
+			with open(human_no_header, 'w') as human_out:
+				for key in human_dict.keys():
+					human_out.write(human_dict[key])
+					stats.write(human_dict[key].split('\t')[2]+'\n')
 
 if __name__ == '__main__':
 	main()
