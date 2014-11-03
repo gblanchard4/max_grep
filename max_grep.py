@@ -112,5 +112,6 @@ def main():
 					human_out.write(human_dict[key])
 					stats.write(human_dict[key].split('\t')[2]+'\n')
 
+
 if __name__ == '__main__':
 	main()
