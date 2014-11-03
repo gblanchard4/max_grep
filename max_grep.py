@@ -4,8 +4,6 @@ import argparse
 import os
 import sys
 import re
-#from collections import defaultdict
-
 
 __author__ = "Gene Blanchard"
 __email__ = "me@geneblanchard.com"
@@ -24,10 +22,7 @@ def no_homopolymer(sequence):
 		return False
 
 def main():
-
-	'''
-	Get command line arguments
-	'''
+	# Get command line arguments
 	parser = argparse.ArgumentParser(description='Grep a sam file for virus and human sequences')
 
 	# Input file
@@ -39,7 +34,7 @@ def main():
 	sam = os.path.abspath(args.input)
 	test = args.test
 
-	# output files
+	# Output files
 	virus_no_header = "{}_Human_Virus_no_header.txt".format(sam)
 	human_no_header = "{}_Human_Only_no_header.txt".format(sam)
 	stats_file = "{}_max_grep_stats.txt".format(sam)
@@ -49,8 +44,6 @@ def main():
 	human_re = re.compile("chr[1-9,XYM]")
 
 	#Dictionaries
-	#virus_dict = defaultdict(list)
-	#human_dict = defaultdict(list)
 	virus_dict = {}
 	human_dict = {}
 
