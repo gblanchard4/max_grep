@@ -1,5 +1,5 @@
-max_grep
-========
+max_grep.py
+============
 
 A python implemented grep to filter out virus and human from a sam
 
