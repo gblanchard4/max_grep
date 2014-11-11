@@ -80,12 +80,14 @@ def main():
 					human_count += 1
 				else:
 					homopolymer_count += 1
+	# Just print stats, don't write files
  	if test:
  		print "Homopolymers found:\t{}".format(homopolymer_count)
  		print "Total Virus found:\t{}".format(virus_count)
 		print "Unique Virus found:\t{}".format(len(virus_dict.keys()))
 		print "Total Human found:\t{}".format(human_count)
 		print "Unique Human found:\t{}".format(len(human_dict.keys()))
+ 	# Do real work
  	else:
 		with open(stats_file, 'w') as stats:
 			# Homopolymer stats
