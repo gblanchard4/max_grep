@@ -104,7 +104,7 @@ def main():
 	parser.add_argument('-i','--input',dest='input', help='The input stats', required=True)
 	parser.add_argument('-t','--test', action='store_true', help='Test mode: Just print stats')
 	parser.add_argument('--human', action='store_true', help='Write the human sam file, Default: False')
-	parser.add_argument('r','--recurse', action='store_true', help='Input is a directory, recurse and grep all sam files')
+	parser.add_argument('-r','--recurse', action='store_true', help='Input is a directory, recurse and grep all sam files')
 
 	# Parse arguments
 	args = parser.parse_args()
