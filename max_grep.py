@@ -27,12 +27,14 @@ def main():
 
 	# Input file
 	parser.add_argument('-i','--input',dest='input', help='The input stats', required=True)
-	parser.add_argument('-t','--test', action='store_true', help='Test mode, no files written.')
+	parser.add_argument('-t','--test', action='store_true', help='Test mode: Just print stats')
+	parser.add_argument('--human', action='store_true', help='Write the human sam file, Default: False')
 
 	# Parse arguments
 	args = parser.parse_args()
 	sam = os.path.abspath(args.input)
 	test = args.test
+	human = args.human
 
 	# Output files
 	virus_no_header = "{}_Human_Virus_no_header.txt".format(sam)
@@ -99,13 +101,14 @@ def main():
 				for key in virus_dict.keys():
 					virus_out.write(virus_dict[key])
 					stats.write(virus_dict[key].split('\t')[2]+'\n')
-			# Write human
-			stats.write("\nTotal Human found:\t{}\n".format(human_count))
-			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
-			with open(human_no_header, 'w') as human_out:
-				for key in human_dict.keys():
-					human_out.write(human_dict[key])
-					stats.write(human_dict[key].split('\t')[2]+'\n')
+			if human:
+				# Write human
+				stats.write("\nTotal Human found:\t{}\n".format(human_count))
+				stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
+				with open(human_no_header, 'w') as human_out:
+					for key in human_dict.keys():
+						human_out.write(human_dict[key])
+						stats.write(human_dict[key].split('\t')[2]+'\n')
 
 
 if __name__ == '__main__':
