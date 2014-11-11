@@ -115,11 +115,11 @@ def main():
 
 	if recurse:
 		samlist = []
-		for dirname, dirnames, filenames in os.walk(sam):
-			for filename in filenames:
-				if filename.endswith('.sam'):
-					samlist.append(dirname+filename)
-		print samlist
+		for file in os.listdir(sam):
+			if file.endswith(".sam"):
+				samlist.append(file)
+		for sam in samlist:
+			grep(sam,test,human)
 	else:
 		grep(sam, test, human)
 
