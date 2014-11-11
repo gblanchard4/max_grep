@@ -87,7 +87,6 @@ def grep(sam, test, human):
 				for key in virus_dict.keys():
 					virus_out.write(virus_dict[key])
 					stats.write(virus_dict[key].split('\t')[2]+'\n')
-			if human:
 			# Write human stats
 			stats.write("\nTotal Human found:\t{}\n".format(human_count))
 			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
@@ -123,8 +122,6 @@ def main():
 		print samlist
 	else:
 		grep(sam, test, human)
-
-
 
 
 if __name__ == '__main__':
