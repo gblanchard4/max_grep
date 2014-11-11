@@ -94,17 +94,20 @@ def main():
 		with open(stats_file, 'w') as stats:
 			# Homopolymer stats
 			stats.write("\nHomopolymers found:\t{}".format(homopolymer_count))
-			# Write virus
+			# Write virus stats
 			stats.write("\nTotal Virus found:\t{}\n".format(virus_count))
 			stats.write("Unique Virus found:\t{}\n".format(len(virus_dict.keys())))
+			# Write virus file
 			with open(virus_no_header, 'w') as virus_out:
 				for key in virus_dict.keys():
 					virus_out.write(virus_dict[key])
 					stats.write(virus_dict[key].split('\t')[2]+'\n')
 			if human:
-				# Write human
-				stats.write("\nTotal Human found:\t{}\n".format(human_count))
-				stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
+			# Write human stats
+			stats.write("\nTotal Human found:\t{}\n".format(human_count))
+			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
+			# Write virus file
+			if human:
 				with open(human_no_header, 'w') as human_out:
 					for key in human_dict.keys():
 						human_out.write(human_dict[key])
