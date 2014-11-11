@@ -20,30 +20,15 @@ def no_homopolymer(sequence):
 				return True
 	else:
 		return False
-
-def main():
-	# Get command line arguments
-	parser = argparse.ArgumentParser(description='Grep a sam file for virus and human sequences')
-
-	# Input file
-	parser.add_argument('-i','--input',dest='input', help='The input stats', required=True)
-	parser.add_argument('-t','--test', action='store_true', help='Test mode: Just print stats')
-	parser.add_argument('--human', action='store_true', help='Write the human sam file, Default: False')
-
-	# Parse arguments
-	args = parser.parse_args()
-	sam = os.path.abspath(args.input)
-	test = args.test
-	human = args.human
+def grep(sam, test, human):
+	# Regular Expressions
+	virus_re = re.compile("chrvirus")
+	human_re = re.compile("chr[1-9,XYM]")
 
 	# Output files
 	virus_no_header = "{}_Human_Virus_no_header.txt".format(sam)
 	human_no_header = "{}_Human_Only_no_header.txt".format(sam)
 	stats_file = "{}_max_grep_stats.txt".format(sam)
-
-	# Regular Expressions
-	virus_re = re.compile("chrvirus")
-	human_re = re.compile("chr[1-9,XYM]")
 
 	#Dictionaries
 	virus_dict = {}
@@ -112,6 +97,34 @@ def main():
 					for key in human_dict.keys():
 						human_out.write(human_dict[key])
 						stats.write(human_dict[key].split('\t')[2]+'\n')
+def main():
+	# Get command line arguments
+	parser = argparse.ArgumentParser(description='Grep a sam file for virus and human sequences')
+
+	# Input file
+	parser.add_argument('-i','--input',dest='input', help='The input stats', required=True)
+	parser.add_argument('-t','--test', action='store_true', help='Test mode: Just print stats')
+	parser.add_argument('--human', action='store_true', help='Write the human sam file, Default: False')
+	parser.add_argument('r','--recurse', action='store_true', help='Input is a directory, recurse and grep all sam files')
+
+	# Parse arguments
+	args = parser.parse_args()
+	sam = os.path.abspath(args.input)
+	test = args.test
+	human = args.human
+	recurse = args.recurse
+
+	if recurse:
+		samlist = []
+		for dirname, dirnames, filenames in os.walk(sam):
+			for filename in filenames:
+				if filename.endswith('.sam'):
+					samlist.append(dirname+filename)
+		print samlist
+	else:
+		grep(sam, test, human)
+
+
 
 
 if __name__ == '__main__':
