@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 import re
+from collections import defaultdict
 
 __author__ = "Gene Blanchard"
 __email__ = "me@geneblanchard.com"
@@ -11,6 +12,22 @@ __email__ = "me@geneblanchard.com"
 '''
 Max Grep
 '''
+
+
+class Valid_Read:
+
+	def __init__(self, line):
+
+		self.line = line
+		# Initialize with first mapping found
+		split_line = line.split('\t')
+		self.seq_id = split_line[0]
+		hit = split_line[2]
+		self.mappings = {hit:line}
+
+	def add_mapping(self, hit, line):
+		self.mappings[hit] = line
+
 # Check for some defined homopolymers. Sequence is split_line[9]
 def no_homopolymer(sequence):
 	split_line = sequence.split('\t')
@@ -20,6 +37,23 @@ def no_homopolymer(sequence):
 				return True
 	else:
 		return False
+
+def processing(list, line):
+	# Values from line
+	split_line = line.split('\t')
+	seq_id = split_line[0]
+	hit = split_line[2]
+
+	# If the item already exist in the list add a new mapping
+	if seq_id in list:
+		seq_id.add_mapping(hit, line)
+	# Else not in the list
+	else:
+		# Create the valid read with initial mapping added
+		seq_id = Valid_Read(line)
+		# Add the valid read to the list
+		list.append(seq_id)
+
 def grep(sam, test, human):
 	# Regular Expressions
 	virus_re = re.compile("chrvirus")
@@ -31,13 +65,17 @@ def grep(sam, test, human):
 	stats_file = "{}_max_grep_stats.txt".format(sam)
 
 	#Dictionaries
-	virus_dict = {}
-	human_dict = {}
+	virus_list = []
+	human_list = []
+
 
 	# Counts
-	virus_count = 0
-	human_count = 0 
-	homopolymer_count = 0
+	# # Number of reads that pass filter
+	total_virus_count = 0
+	total_human_count = 0 
+	# Number of homopolymers
+	virus_homopolymer = 0
+	human_homopolymer = 0 
 
 	with open(sam, 'r') as sam_handle: #, open(human_no_header, 'w')
 		for line in sam_handle:
@@ -47,34 +85,39 @@ def grep(sam, test, human):
 				continue
 			# Virus
 			if virus_re.search(line) is not None:
-				#print "Virus"
-				split_line = line.split('\t')
-				seq_id = split_line[0]
-				hit = split_line[2]
 				if no_homopolymer(line):
-					virus_dict[seq_id+hit] = line
-					virus_count += 1
+					processing(virus_list, line)
+					total_virus_count += 1
 				else:
-					homopolymer_count += 1
+					virus_homopolymer += 1
 			# Human
 			elif human_re.search(line) is not None:
-				#print "Human"
-				split_line = line.split('\t')
-				seq_id = split_line[0]
-				hit = split_line[2]
 				if no_homopolymer(line):
-					human_dict[seq_id+hit] = line
-					human_count += 1
+					processing(human_list, line)
+					total_human_count += 1
 				else:
-					homopolymer_count += 1
+					human_homopolymer += 1
 	# Just print stats, don't write files
  	if test:
- 		print "Homopolymers found:\t{}".format(homopolymer_count)
- 		print "Total Virus found:\t{}".format(virus_count)
-		print "Unique Virus found:\t{}".format(len(virus_dict.keys()))
-		print "Total Human found:\t{}".format(human_count)
-		print "Unique Human found:\t{}".format(len(human_dict.keys()))
+ 		print "Total Homopolymers found:\t{}".format(virus_homopolymer + human_homopolymer)
+ 		print "Virus Homopolymers found:\t{}".format(virus_homopolymer)
+ 		print "Human Homopolymers found:\t{}".format(human_homopolymer)
+ 		print "Total Virus found:\t{}".format(total_virus_count)
+		print "Unique Virus found:\t{}".format(len(virus_list))
+		print "Total Human found:\t{}".format(total_human_count)
+		print "Unique Human found:\t{}".format(len(virus_list))
+		print "\n+Virus Mappings"
+		for virus in virus_list:
+			print ">{}".format(virus.seq_id)
+			for mapping in virus.mappings.keys():
+				print "\t*{}".format(mapping)
+		print "\n+Human Mappings"
+		for human in human_list:
+			print ">{}".format(human.seq_id)
+			for mapping in human.mappings.keys():
+				print "\t*{}".format(mapping)
  	# Do real work
+ 	"""
  	else:
 		with open(stats_file, 'w') as stats:
 			# Homopolymer stats
@@ -96,6 +139,7 @@ def grep(sam, test, human):
 					for key in human_dict.keys():
 						human_out.write(human_dict[key])
 						stats.write(human_dict[key].split('\t')[2]+'\n')
+	"""
 def main():
 	# Get command line arguments
 	parser = argparse.ArgumentParser(description='Grep a sam file for virus and human sequences')
@@ -117,7 +161,7 @@ def main():
 		samlist = []
 		for file in os.listdir(sam):
 			if file.endswith(".sam"):
-				samlist.append(file)
+				samlist.append(sam+"/"+file)
 		for sam in samlist:
 			grep(sam,test,human)
 	else:
