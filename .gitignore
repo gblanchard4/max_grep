@@ -1,4 +1,5 @@
 .DS_*
+test/*
 *.sam
 *_Human_Virus_no_header.txt
 *_Human_Only_no_header.txt
