@@ -13,49 +13,29 @@ __email__ = "me@geneblanchard.com"
 Max Grep
 '''
 
-
-class Valid_Read:
-
-	def __init__(self, line):
-
-		self.line = line
-		# Initialize with first mapping found
-		split_line = line.split('\t')
-		self.seq_id = split_line[0]
-		hit = split_line[2]
-		self.mappings = [hit]
-
-	def add_mapping(self, hit):
-		self.mappings.append(hit)
-
 # Check for some defined homopolymers. Sequence is split_line[9]
 def no_homopolymer(sequence):
-	split_line = sequence.split('\t')
-	if not 'TTTTTTTTTTTTTTTTTTTT' in split_line[9]:
-		if not 'AAAAAAAAAAAAAAAAAAAA' in split_line[9]:
-			if not 'TTTTTTTTTTTTTTTTCTTT' in split_line[9]:
+	if not 'TTTTTTTTTTTTTTTTTTTT' in sequence:
+		if not 'AAAAAAAAAAAAAAAAAAAA' in sequence:
+			if not 'TTTTTTTTTTTTTTTTCTTT' in sequence:
 				return True
 	else:
 		return False
 
-def processing(dict, line):
+def processing(dict, seq_id, line, hit):
 	# Values from line
 	split_line = line.split('\t')
 	seq_id = split_line[0]
 	hit = split_line[2]
 
 	# If the item already exist in the list add a new mapping
-	if seq_id in dict.keys():
+	if seq_id in dict:
 		# Add the mapping to the Valid_Read mappings list
-		seq_id.add_mapping(hit)
-		# Increase the mappings count 
-		dict[seq_id] += 1
+		dict[seq_id][1].append(hit)
 	# Else not in the list
 	else:
-		# Create the valid read with initial mapping added
-		seq_id = Valid_Read(line)
-		# Add the valid read to the dictionary with a count of 1
-		dict[seq_id] = 1
+		# Add the valid read to the dictionary 
+		dict[seq_id] = (line, [hit])
 
 def grep(sam, test, human, verbose):
 	# Regular Expressions
@@ -68,9 +48,9 @@ def grep(sam, test, human, verbose):
 	stats_file = "{}_max_grep_stats.txt".format(sam)
 
 	#Dictionaries
-	virus_dict = {}
-	human_dict = {}
-
+	# Data structure will look like: dict[seq_id] = (line, [hit1, hit2, hit3])
+	virus_dict = defaultdict(tuple)
+	human_dict = defaultdict(tuple)
 
 	# Counts
 	# # Number of reads that pass filter
@@ -86,24 +66,27 @@ def grep(sam, test, human, verbose):
 			if line.startswith('@SQ') or line.startswith('@PG'):
 				#print "Nope"
 				continue
+
+			# Line is valid get values needed
+			split_line = line.split('\t')
+			seq_id = split_line[0]
+			hit = split_line[2]
+			sequence = line.split('\t')[9]
+
 			# Virus
-			if virus_re.search(line) is not None:
-				if no_homopolymer(line):
-					processing(virus_dict, line)
+			if virus_re.search(hit) is not None:
+				if no_homopolymer(sequence):
+					processing(virus_dict, seq_id, line, hit)
 					total_virus_count += 1
 				else:
 					virus_homopolymer += 1
 			# Human
-			elif human_re.search(line) is not None:
-				if no_homopolymer(line):
-					processing(human_dict, line)
+			elif human_re.search(hit) is not None:
+				if no_homopolymer(sequence):
+					processing(human_dict, seq_id, line, hit)
 					total_human_count += 1
 				else:
 					human_homopolymer += 1
-			print "Virus:\t{}".format(len(virus_dict.keys()))
-			print "Human:\t{}".format(len(human_dict.keys()))
-			print "Total:\t{}\n".format(len(virus_dict.keys())+len(human_dict.keys()))
-
 
 	# Just print stats, don't write files
  	if test:
@@ -115,51 +98,54 @@ def grep(sam, test, human, verbose):
 		print "Total Human found:\t{}".format(total_human_count)
 		print "Unique Human found:\t{}".format(len(human_dict.keys()))
 		print "\n+Virus Mappings"
-		for virus_id in virus_dict.keys():
-			print ">{}".format(virus.seq_id)
-			for mapping in virus_id.mappings:
+		for virus_id in virus_dict:
+			print ">{}".format(virus_id)
+			for mapping in virus_dict[virus_id][1]:
 				print "\t*{}".format(mapping)
 		print "\n+Human Mappings"
-		for human_id in human_list:
-			print ">{}".format(human.seq_id)
-			for mapping in human_id.mappings:
+		for human_id in human_dict:
+			print ">{}".format(human_id)
+			for mapping in human_dict[human_id][1]:
 				print "\t*{}".format(mapping)
- 	'''
  	# Do real work
  	else:
 		with open(stats_file, 'w') as stats:
 			# Homopolymer stats
-			stats.write("Total Homopolymers found:\t{}".format(virus_homopolymer + human_homopolymer))
- 			stats.write("Virus Homopolymers found:\t{}".format(virus_homopolymer))
- 			stats.write("Human Homopolymers found:\t{}".format(human_homopolymer))
+			stats.write("Total Homopolymers found:\t{}\n".format(virus_homopolymer + human_homopolymer))
+ 			stats.write("Virus Homopolymers found:\t{}\n".format(virus_homopolymer))
+ 			stats.write("Human Homopolymers found:\t{}\n".format(human_homopolymer))
 			# Write virus stats
 			stats.write("\nTotal Virus found:\t{}\n".format(total_virus_count))
-			stats.write("Unique Virus found:\t{}\n".format(len(virus_list)))
+			stats.write("Unique Virus found:\t{}\n".format(len(virus_dict.keys())))
+			# Write human stats
+			stats.write("\nTotal Human found:\t{}\n".format(total_human_count))
+			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
 			# Write virus file
 			with open(virus_no_header, 'w') as virus_out:
 				# Write a line for each virus found in the list
-				for virus in virus_list:
-					virus_out.write(virus.line)
-					for mapping in virus.mappings.keys():
-						stats.write("\t*{}".format(mapping))
+				for virus in virus_dict:
+					virus_out.write(virus_dict[virus][0])
+					stats.write(">{}\n".format(virus))
+					for mapping in virus_dict[virus][1]:
+						stats.write("\t*{}\n".format(mapping))
 			# Write human stats
 			stats.write("\nTotal Human found:\t{}\n".format(total_human_count))
-			stats.write("Unique Human found:\t{}\n".format(len(human_list)))
+			stats.write("Unique Human found:\t{}\n".format(len(human_dict.keys())))
 			# Write Human file if flag passed
 			if human:
 				with open(human_no_header, 'w') as human_out:
-					for human in human_list:
-						human_out.write(human.line)
-						for mapping in human.mappings.keys():
-							stats.write("\t*{}".format*mapping)
-	'''
+					for human in human_dict:
+						human_out.write("{}\n".format(human_dict[human][0]))
+						stats.write(">{}\n".format(human))
+						for mapping in human_dict[human][1]:
+							stats.write("\t*{}\n".format(mapping))
 
 def main():
 	# Get command line arguments
 	parser = argparse.ArgumentParser(description='Grep a sam file for virus and human sequences')
 
 	# Input file
-	parser.add_argument('-i','--input',dest='input', ,default ='test/sam.sam',help='The input stats')
+	parser.add_argument('-i','--input',dest='input', help='The input stats')
 	parser.add_argument('-t','--test', action='store_true', help='Test mode: Just print stats')
 	parser.add_argument('--human', action='store_true', help='Write the human sam file, Default: False')
 	parser.add_argument('-r','--recurse', action='store_true', help='Input is a directory, recurse and grep all sam files')
